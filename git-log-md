@@ -1,0 +1,33 @@
+#!/bin/bash
+
+touch CHANGELOG.md
+
+#truncate it
+echo "# Changelog" > CHANGELOG.md
+
+git log --pretty=format:"%h %s %d %B" | while read -r line; do
+
+    if [[ $line =~ \(tag:\ ([0-9.]+)\) ]]; then
+        tag="${BASH_REMATCH[1]}"
+        echo "## Version $tag" >> CHANGELOG.md
+    fi
+
+    prefixes=("feat" "fix" "chore" "docs" "ci" "style" "test" "refactor")
+    should_break=0
+    for prefix in "${prefixes[@]}"; do
+        if [[ $line =~ ^[0-9a-f]+\ $prefix(.*):.*$ ]]; then
+            echo $line
+            echo -e "\n\n> $line " >> CHANGELOG.md
+            # important
+            should_break=1
+            break
+        fi
+    done
+    
+    if [[ $should_break == 1 ]]; then
+        continue
+    fi
+
+    echo -e "\n$line" >> CHANGELOG.md
+done
+
